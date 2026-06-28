@@ -1,10 +1,13 @@
 version: 2.1
 
+orbs:
+  win: circleci/windows@5.0
+
 jobs:
   windows-rdp:
-    machine:
-      image: windows-server-2022-gui:current
-      resource_class: windows.xlarge
+    executor:
+      name: win/default
+      size: medium
     steps:
       - run:
           name: Setup RDP
