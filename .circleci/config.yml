@@ -31,7 +31,7 @@ jobs:
       - run:
           name: Connect Tailscale and Show IP
           command: |
-            & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=tskey-auth-k3AGznvqo621CNTRL-gATevFT8wQU7VvLj7JKuQUnhRAvszppf --hostname=circle-rdp
+            & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=$env:TAILSCALE_AUTH_KEY --hostname=circle-rdp
             Start-Sleep 10
             $ip = & "C:\Program Files\Tailscale\tailscale.exe" ip -4
             Write-Host "================================"
