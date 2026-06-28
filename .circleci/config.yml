@@ -1,0 +1,53 @@
+version: 2.1
+
+jobs:
+  windows-rdp:
+    machine:
+      image: windows-server-2022-gui:current
+      resource_class: windows.xlarge
+    steps:
+      - run:
+          name: Setup RDP
+          command: |
+            Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name fDenyTSConnections -Value 0 -Force
+            Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name UserAuthentication -Value 0 -Force
+            netsh advfirewall firewall add rule name=RDP dir=in action=allow protocol=TCP localport=3389
+            Restart-Service -Name TermService -Force
+          shell: powershell.exe
+      - run:
+          name: Create User
+          command: |
+            $p = ConvertTo-SecureString "Password@123" -AsPlainText -Force
+            New-LocalUser -Name RDP -Password $p -AccountNeverExpires
+            Add-LocalGroupMember -Group Administrators -Member RDP
+            Add-LocalGroupMember -Group "Remote Desktop Users" -Member RDP
+          shell: powershell.exe
+      - run:
+          name: Install Tailscale
+          command: |
+            Invoke-WebRequest -Uri https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi -OutFile C:\ts.msi
+            Start-Process msiexec.exe -ArgumentList "/i C:\ts.msi /quiet /norestart" -Wait
+          shell: powershell.exe
+      - run:
+          name: Connect Tailscale and Show IP
+          command: |
+            & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=tskey-auth-k3AGznvqo621CNTRL-gATevFT8wQU7VvLj7JKuQUnhRAvszppf --hostname=circle-rdp
+            Start-Sleep 10
+            $ip = & "C:\Program Files\Tailscale\tailscale.exe" ip -4
+            Write-Host "================================"
+            Write-Host "IP: $ip"
+            Write-Host "User: RDP"
+            Write-Host "Pass: Password@123"
+            Write-Host "================================"
+          shell: powershell.exe
+      - run:
+          name: Keep Alive
+          no_output_timeout: 5h
+          command: |
+            while($true){ Start-Sleep 300; Write-Host "alive" }
+          shell: powershell.exe
+
+workflows:
+  rdp:
+    jobs:
+      - windows-rdp
