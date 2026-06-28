@@ -47,7 +47,14 @@ jobs:
           name: Keep Alive
           no_output_timeout: 5h
           command: |
-            while($true){ Start-Sleep 300; Write-Host "alive" }
+            $start = Get-Date
+            while ($true) {
+              Start-Sleep 60
+              $elapsed = (Get-Date) - $start
+              [Console]::Out.Flush()
+              Write-Host "$(Get-Date -Format 'HH:mm:ss') alive - session running for $($elapsed.ToString('hh\:mm\:ss'))"
+              [Console]::Out.Flush()
+            }
           shell: powershell.exe
 
 workflows:
